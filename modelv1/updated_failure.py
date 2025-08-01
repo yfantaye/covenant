@@ -39,6 +39,7 @@ class ScottStrategy:
         self.trading_days = config.get('modelv1').get('trading_days', 252)
         self.rolling_window_days = config.get('modelv1').get('rolling_window_days', 90)
         self.normalize_weights = config.get('modelv1').get('normalize_weights', True)
+        self.normalize_score = config.get('modelv1').get('normalize_score', True)
 
 
 
@@ -642,7 +643,13 @@ class ScottStrategy:
         
         # Ensure columns are in the same order for dot product
         df_copy = df[['companyid', 'signal_date', target_col]].copy()
-        df_copy['score'] = df[signal_cols].dot(weights)
+        score = df[signal_cols].dot(weights)
+
+        if self.normalize_score:
+            df_copy['score'] = score/score.max()
+        else:
+            df_copy['score'] = score
+
 
         print(f'Scores Head: ')
         print(df_copy.head())

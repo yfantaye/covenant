@@ -36,6 +36,7 @@ modelv1:
   use_scott_failure_dates: False
   use_scott_z_score: False
   normalize_weights: True
+  normalize_score: True
 
 
 # 5. Model-Specific Parameters
