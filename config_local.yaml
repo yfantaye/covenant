@@ -5,10 +5,16 @@
 data_directory: "../covenant/SampleCovenantData/"
 test_data_directory: "../covenant/SampleCovenantData/"
 model_output_directory: "model_outputs/"
+global_output_directory: "outputs"
 index_date_format: "%Y-%m-%d"
-price_date_format: "%d/%m/%d"
-signal_date_format: "%d/%m/%d"
-date_format: "%d/%m/%d"
+price_date_format: "%m/%d/%Y"
+signal_date_format: "%m/%d/%Y"
+date_format: "%m/%d/%Y"
+
+# 1.1 Date Range
+date_range_start: "2010-01-01"
+date_range_end: "2024-12-31"
+default_risk_free_rate: 1.01
 
 # 2. Feature Engineering Settings
 prediction_horizon_days: 365
@@ -29,6 +35,7 @@ modelv1:
   use_scott_max_beta_dates: False
   use_scott_failure_dates: False
   use_scott_z_score: False
+  normalize_weights: True
 
 
 # 5. Model-Specific Parameters

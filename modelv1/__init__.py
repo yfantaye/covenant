@@ -18,10 +18,12 @@ def run(config):
     model_class = MODEL_MAPPING[config['model_type']]
     sm = model_class(config)
 
-    df_merged, failure_dates, distress_timeline = sm.load_and_merge_data()
+    df_merged = sm.load_and_merge_data()
 
     if config['model_type'] in ['scottv1']:
         failure_dates = sm.get_max_beta_dates(df_merged)
+    else:
+        failure_dates, distress_timeline = sm.compute_probable_failure_dates(df_merged)
 
     # Reads signal data from file and add failure labels
     df_labeled = sm.load_signals_with_labels(failure_dates)
