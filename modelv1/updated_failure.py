@@ -340,7 +340,6 @@ class ScottStrategy:
 
 
         # Build arrays for max_date and window_end for each row
-        print(f'failure_dates: {failure_dates}')
         
         df_list = []
         time_delta = timedelta(days=self.fail_days)
