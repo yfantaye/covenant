@@ -25,10 +25,28 @@ endif
 all: setup
 
 # --- Environment Setup ---
+
+# Install uv package manager
+install_uv:
+	@echo ">>> Installing uv package manager..."
+	@if command -v uv >/dev/null 2>&1; then \
+		echo ">>> uv is already installed at: $(shell which uv)"; \
+		uv --version; \
+	else \
+		echo ">>> Installing uv..."; \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+		echo ">>> uv installed successfully!"; \
+		echo ">>> Please restart your terminal or run: source ~/.bashrc"; \
+	fi
+
 setup:
 	@echo ">>> Setting up backend environment..."
 	@echo ">>> Using Python: $(PYTHON)"
 	$(PYTHON) --version
+	@if ! command -v uv >/dev/null 2>&1; then \
+		echo ">>> uv not found. Please run 'make install_uv' first."; \
+		exit 1; \
+	fi
 	$(UV) venv $(VENV_NAME) --python $(PYTHON)
 	. $(VENV_NAME)/bin/activate && $(UV) pip install -r requirements.txt
 	@echo ">>> Backend setup complete!"
@@ -38,6 +56,10 @@ setup-full:
 	@echo ">>> Setting up backend environment with minimal requirements..."
 	@echo ">>> Using Python: $(PYTHON)"
 	$(PYTHON) --version
+	@if ! command -v uv >/dev/null 2>&1; then \
+		echo ">>> uv not found. Please run 'make install_uv' first."; \
+		exit 1; \
+	fi
 	$(UV) venv $(VENV_NAME) --python $(PYTHON)
 	. $(VENV_NAME)/bin/activate && $(UV) pip install -r requirements-full.txt
 	@echo ">>> Minimal backend setup complete!"
@@ -239,6 +261,7 @@ config:
 # Show help
 help:
 	@echo ">>> Available commands:"
+	@echo "  install_uv: Install uv package manager"
 	@echo "  setup: Set up the virtual environment (may fail with shap)"
 	@echo "  setup-full: Set up with full requirements (with shap)"
 	@echo "  check-python: Check Python version compatibility"
