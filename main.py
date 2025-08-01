@@ -21,13 +21,13 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default="config.yaml",
+        default="config_local.yaml",
         help="Path to the configuration YAML file.",
     )
     parser.add_argument(
         "--model-type",
         type=str,
-        required=True,
+        default="scottv1",
         choices={**modelv1.MODEL_MAPPING, **modelv2.MODEL_MAPPING}.keys(),
         help="The type of model to train.",
     )
@@ -50,6 +50,9 @@ def main():
     config['use_sample_data'] = args.test_run
     config['run_mode'] = args.mode
     config['model_type'] = args.model_type
+
+    if args.test_run:
+        config['price_date_format'] = "%Y-%m-%d"
 
     if args.model_type in modelv1.MODEL_MAPPING:
         modelv1.run(config)

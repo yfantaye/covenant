@@ -1,0 +1,56 @@
+# --- Configuration for Corporate Failure Prediction Pipeline ---
+
+# 1. Data Paths
+# Paths are relative to the project root
+data_directory: "../covenant/SampleCovenantData/"
+test_data_directory: "../covenant/SampleCovenantData/"
+model_output_directory: "model_outputs/"
+index_date_format: "%Y-%m-%d"
+price_date_format: "%d/%m/%d"
+signal_date_format: "%d/%m/%d"
+date_format: "%d/%m/%d"
+
+# 2. Feature Engineering Settings
+prediction_horizon_days: 365
+rolling_window_days: 90
+
+# 3. Validation Settings
+# Defines the train/test split point. 0.8 means 80% for training, 20% for testing.
+train_test_split_ratio: 0.8
+# Number of splits for time-series cross-validation during tuning
+tuning_cv_splits: 5
+
+# 4. Hyperparameter Tuning Settings
+tuning_n_trials: 50 # Number of Optuna trials to run
+
+modelv1:
+  trading_days: 252
+  rolling_window_days: 90
+  use_scott_max_beta_dates: False
+  use_scott_failure_dates: False
+  use_scott_z_score: False
+
+
+# 5. Model-Specific Parameters
+# Default parameters for training mode. These can be overridden by the tuning process.
+models:
+  lightgbm:
+    objective: "binary"
+    metric: "auc"
+    n_estimators: 1000
+    learning_rate: 0.05
+    num_leaves: 31
+    verbose: -1 # Suppress verbose output
+    # Add other parameters here
+
+  logistic_regression:
+    C: 1.0
+    penalty: "l1"
+    solver: "liblinear"
+    class_weight: "balanced"
+    random_state: 42
+
+  coxph:
+    penalizer: 0.1
+    l1_ratio: 0.5 # For elastic net regularization
+

@@ -22,6 +22,9 @@ MODEL_MAPPING = {
 }
 
 def run(config):
+    '''
+    Runs the model pipeline.
+    '''
 
     test_run = config['use_sample_data']    
     run_mode = config['run_mode']

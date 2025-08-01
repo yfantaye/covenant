@@ -11,9 +11,15 @@ lifelines>=0.27.0  # For Survival Analysis (CoxPH Model)
 #Hyperparameter Tuning
 optuna>=3.4.0
 
-#MLOps
+#Explainability & MLOps
+# Using newer versions compatible with Python 3.13
+shap>=0.44.0  # Updated for Python 3.13 compatibility
 mlflow>=2.7.0  # Optional, for experiment tracking
 joblib>=1.3.0  # For saving models
 
 #Financial Data
 yfinance>=0.2.0
+
+#Additional dependencies for Python 3.13 compatibility
+setuptools>=68.0.0
+wheel>=0.41.0

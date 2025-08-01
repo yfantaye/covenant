@@ -2,24 +2,68 @@
 
 # --- Variables ---
 VENV_NAME := .venv
-PYTHON := $(VENV_NAME)/bin/python
+PYTHON := /usr/local/bin/python3
 UV := uv
 DATA_DIR := ./data
 TEST_DATA_DIR := ./tests/test_data
 MODEL_OUTPUT_DIR := ./model_outputs
+CONFIG_FILE := config_local.yaml
 
-.PHONY: all setup clean test-run run-prod tune
+.PHONY: all setup clean test-run run-prod tune install run check-encoding setup-backend
 
 all: setup
 
 # --- Environment Setup ---
-setup: $(VENV_NAME)/bin/activate
+setup:
+	@echo ">>> Setting up backend environment..."
+	@echo ">>> Using Python: $(PYTHON)"
+	$(PYTHON) --version
+	$(UV) venv $(VENV_NAME) --python $(PYTHON)
+	. $(VENV_NAME)/bin/activate && $(UV) pip install -r requirements.txt
+	@echo ">>> Backend setup complete!"
 
-$(VENV_NAME)/bin/activate: requirements.txt
-	@echo ">>> Setting up virtual environment..."
-	$(UV) venv $(VENV_NAME)
-	$(UV) pip install -r requirements.txt --python $(PYTHON)
-	@echo ">>> Setup complete. Activate with: source $(VENV_NAME)/bin/activate"
+# Setup with minimal requirements (no shap)
+setup-full:
+	@echo ">>> Setting up backend environment with minimal requirements..."
+	@echo ">>> Using Python: $(PYTHON)"
+	$(PYTHON) --version
+	$(UV) venv $(VENV_NAME) --python $(PYTHON)
+	. $(VENV_NAME)/bin/activate && $(UV) pip install -r requirements-full.txt
+	@echo ">>> Minimal backend setup complete!"
+
+
+
+# Check Python version compatibility
+check-python:
+	@echo ">>> Checking Python version compatibility..."
+	$(PYTHON) --version
+	@echo ">>> Python version check complete!"
+
+# --- Package Management ---
+install:
+	@echo ">>> Installing Python package..."
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Usage: make install PACKAGE=<package_name>"; \
+		exit 1; \
+	fi
+	. $(VENV_NAME)/bin/activate && $(UV) pip install $(PACKAGE)
+	@echo ">>> Adding package to requirements.txt..."
+	. $(VENV_NAME)/bin/activate && $(UV) pip freeze | grep -i $(PACKAGE) >> requirements.txt
+	@echo ">>> Package $(PACKAGE) installed and added to requirements.txt"
+
+# --- Command Execution ---
+run:
+	@echo ">>> Running command in virtual environment..."
+	@if [ -z "$(COMMAND)" ]; then \
+		echo "Usage: make run COMMAND='<command_to_run>'"; \
+		exit 1; \
+	fi
+	. $(VENV_NAME)/bin/activate && $(COMMAND)
+
+# --- File Encoding Check ---
+check-encoding:
+	@echo ">>> Checking for files with non-UTF-8 encoding..."
+	@find . -type f -name "*.py" -exec file -I {} \; | grep -v "utf-8" || echo "All Python files are UTF-8 encoded"
 
 # --- Cleaning ---
 clean:
@@ -33,12 +77,20 @@ clean:
 # --- Pipeline Execution ---
 
 # Run a quick test on sample data
+# Usage: make test-run MODEL=<model_type>
+# Example: make test-run MODEL=z_score
 test-run:
 	@echo ">>> Running a test pipeline on sample data..."
-	$(PYTHON) main.py \
-		--data-dir $(TEST_DATA_DIR) \
-		--model-type lightgbm \
-		--mode train
+	@if [ -z "$(MODEL)" ]; then \
+		echo "Usage: make test-run MODEL=<model_type>"; \
+		echo "Available models: lightgbm, logistic_regression, coxph, z_score, scottv1, scottv2"; \
+		exit 1; \
+	fi
+	. $(VENV_NAME)/bin/activate && python main.py \
+		--test-run \
+		--model-type $(MODEL) \
+		--mode train \
+		--config $(CONFIG_FILE)
 	@echo ">>> Test run finished."
 
 # Run a full production training run
@@ -46,10 +98,15 @@ test-run:
 # Example: make run-prod MODEL=lightgbm
 run-prod:
 	@echo ">>> Running production training for model: $(MODEL)..."
-	$(PYTHON) main.py \
-		--data-dir $(DATA_DIR) \
+	@if [ -z "$(MODEL)" ]; then \
+		echo "Usage: make run-prod MODEL=<model_type>"; \
+		echo "Available models: lightgbm, logistic_regression, coxph, z_score, scottv1, scottv2"; \
+		exit 1; \
+	fi
+	. $(VENV_NAME)/bin/activate && python main.py \
 		--model-type $(MODEL) \
-		--mode train
+		--mode train \
+		--config $(CONFIG_FILE)
 	@echo ">>> Production run for $(MODEL) finished."
 
 # Run hyperparameter tuning
@@ -57,9 +114,84 @@ run-prod:
 # Example: make tune MODEL=lightgbm
 tune:
 	@echo ">>> Running hyperparameter tuning for model: $(MODEL)..."
-	$(PYTHON) main.py \
-		--data-dir $(DATA_DIR) \
+	@if [ -z "$(MODEL)" ]; then \
+		echo "Usage: make tune MODEL=<model_type>"; \
+		echo "Available models: lightgbm"; \
+		exit 1; \
+	fi
+	. $(VENV_NAME)/bin/activate && python main.py \
 		--model-type $(MODEL) \
-		--mode tune
+		--mode tune \
+		--config $(CONFIG_FILE)
 	@echo ">>> Tuning for $(MODEL) finished."
+
+# --- Quick Commands ---
+
+# Quick test with scottv1 model
+test-scottv1:
+	@echo ">>> Testing scottv1 model..."
+	$(MAKE) test-run MODEL=scottv1
+
+# Quick test with scottv2 model
+test-scottv2:
+	@echo ">>> Testing scottv2 model..."
+	$(MAKE) test-run MODEL=scottv2
+
+# Quick test with z_score model
+test-zscore:
+	@echo ">>> Testing z_score model..."
+	$(MAKE) test-run MODEL=z_score
+
+# Quick test with lightgbm model
+test-lightgbm:
+	@echo ">>> Testing lightgbm model..."
+	$(MAKE) test-run MODEL=lightgbm
+
+# Quick test with logistic regression model
+test-logistic:
+	@echo ">>> Testing logistic regression model..."
+	$(MAKE) test-run MODEL=logistic_regression
+
+# Quick test with coxph model
+test-coxph:
+	@echo ">>> Testing coxph model..."
+	$(MAKE) test-run MODEL=coxph
+
+# --- Development Helpers ---
+
+# Show available models
+models:
+	@echo ">>> Available models:"
+	@echo "  - lightgbm: Gradient boosting model"
+	@echo "  - logistic_regression: Linear model with regularization"
+	@echo "  - coxph: Survival analysis model"
+	@echo "  - z_score: Z-score based feature weighting model"
+	@echo "  - scottv1: Scott version 1 model"
+	@echo "  - scottv2: Scott version 2 model"
+
+# Show help
+help:
+	@echo ">>> Available commands:"
+	@echo "  setup: Set up the virtual environment (may fail with shap)"
+	@echo "  setup-full: Set up with full requirements (with shap)"
+	@echo "  check-python: Check Python version compatibility"
+	@echo "  install PACKAGE=<name>: Install a Python package"
+	@echo "  run COMMAND='<cmd>': Run a command in the virtual environment"
+	@echo "  test-run MODEL=<type>: Run a test with specified model"
+	@echo "  run-prod MODEL=<type>: Run production training"
+	@echo "  tune MODEL=<type>: Run hyperparameter tuning"
+	@echo "  test-scottv1: Quick test with scottv1 model"
+	@echo "  test-scottv2: Quick test with scottv2 model"
+	@echo "  test-zscore: Quick test with z_score model"
+	@echo "  test-lightgbm: Quick test with lightgbm model"
+	@echo "  test-logistic: Quick test with logistic regression model"
+	@echo "  test-coxph: Quick test with coxph model"
+	@echo "  models: Show available models"
+	@echo "  clean: Clean up the project"
+	@echo "  check-encoding: Check file encodings"
+	@echo ""
+	@echo ">>> Python 3.13 Compatibility Notes:"
+	@echo "  - Use 'setup-minimal' if the main setup fails"
+	@echo "  - Use 'setup-with-shap' for full functionality"
+	@echo "  - shap may have compatibility issues with Python 3.13"
 

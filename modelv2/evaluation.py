@@ -7,7 +7,11 @@ from sklearn.metrics import (
     auc
 )
 from lifelines.utils import concordance_index
-import shap
+try:
+    import shap
+except ImportError:
+    shap = None
+
 import lightgbm as lgb
 
 import logging
@@ -64,14 +68,17 @@ def lgbm_explainability(model, X_test):
 
 
     # 2. SHAP Summary Plot
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_test)
-    
-    fig_shap, ax_shap = plt.subplots()
-    shap.summary_plot(shap_values[1], X_test, plot_type="dot", show=False, ax=ax_shap)
-    ax_shap.set_title("SHAP Summary Plot")
-    ax_shap.tight_layout()
-    plots['shap'] = fig_shap
+    if shap is not None:
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_test)
+        
+        fig_shap, ax_shap = plt.subplots()
+        shap.summary_plot(shap_values[1], X_test, plot_type="dot", show=False, ax=ax_shap)
+        ax_shap.set_title("SHAP Summary Plot")
+        ax_shap.tight_layout()
+        plots['shap'] = fig_shap
+    else:
+        logging.warning("shap not installed, skipping SHAP evaluation")
 
     return {'metrics': metrics, 'plots': plots}
 

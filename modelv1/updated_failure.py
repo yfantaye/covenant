@@ -25,6 +25,10 @@ class ScottStrategy:
 
         # --- Model Specific Parameters ---
         self.date_format = config.get('modelv1').get('date_format', '%Y-%m-%d')
+        self.index_date_format = config.get('index_date_format', '%Y-%m-%d')
+        self.price_date_format = config.get('price_date_format', '%d/%m/%d')
+        self.signal_date_format = config.get('signal_date_format', '%d/%m/%d')
+        
         self.colmap = config.get('modelv1').get('colmap', {})
         self.fail_days = config.get('modelv1').get('fail_days', 180)
         self.trading_days = config.get('modelv1').get('trading_days', 252)
@@ -147,7 +151,7 @@ class ScottStrategy:
         df_price = pd.concat(
             [pd.read_csv(f, 
                         parse_dates=['pricing_date'], 
-                        date_format=self.date_format,
+                        date_format=self.price_date_format,
                         ) for f in share_price_files]
         ).sort_values(by=['companyid', 'pricing_date'])
         logging.info(f"Loaded {len(df_price)} rows from {len(share_price_files)} share price files.")
@@ -157,7 +161,7 @@ class ScottStrategy:
         df_index = pd.concat(
             [pd.read_csv(f, 
                         parse_dates=['pricing_date'], 
-                        date_format=self.date_format,
+                        date_format=self.index_date_format,
                         ) for f in index_files]
         )
         # Rename for clarity in merge
@@ -168,10 +172,8 @@ class ScottStrategy:
 
         # Load Reference Data to link company to index
         ref_file = self._find_files('referenceDataPart')[0]
-        df_ref = (pd.read_csv(ref_file, 
-                            date_format=self.date_format,
-                            )
-                )
+        df_ref = pd.read_csv(ref_file)
+                
         logging.info(f"Loaded reference data from {ref_file}.")
 
         # Merge data
@@ -211,7 +213,7 @@ class ScottStrategy:
         df_failures = (pd.read_csv(failure_list_file)
                     .rename(columns={'peakyear': 'peakYear'})
                     .assign(peakYear=lambda x: pd.to_datetime(x['peakYear'], 
-                                                                format=self.date_format))
+                                                                format='%Y'))
                     )
         
         failure_dates = {}
@@ -259,7 +261,7 @@ class ScottStrategy:
         df_signals = pd.concat(
             [pd.read_csv(f, 
                         parse_dates=['signal_date'], 
-                        date_format=self.date_format) for f in signal_files]
+                        date_format=self.signal_date_format) for f in signal_files]
         ).sort_values(by=['companyid', 'signal_date'])
 
         fail_labels = []
