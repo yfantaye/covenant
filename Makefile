@@ -17,6 +17,7 @@ else
         CONFIG_FILE := config_local.yaml
     else
         CONFIG_FILE := config_vm.yaml
+		PYTHON := /usr/bin/python3
     endif
 endif
 
