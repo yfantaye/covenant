@@ -524,23 +524,14 @@ class ScottStrategy:
         """
         Calculates a score for each feature based on the Z-score for the 
         difference in proportions between two groups defined by a target column.
-
-        A higher score indicates a greater separation (sensitivity) between the groups.
-
-        Args:
-            df: Pandas DataFrame containing binary feature columns and a binary target column.
-            target_col: The name of the binary target column (e.g., 'fail').
-
-        Returns:
-            A pandas DataFrame with feature names and their calculated scores,
-            sorted in descending order.
+        
+        Uses log-space computations to avoid overflow and ensure numerical stability.
         """
 
+        
         # Separate into failure (group 1) and non-failure (group 0)
         feature_cols, group_1, group_0 = self._split_data(df, target_col)
         weights = {}
-
-        
 
         n_1 = len(group_1)
         n_0 = len(group_0)
@@ -550,45 +541,85 @@ class ScottStrategy:
             print("Warning: One of the target groups is empty. Cannot calculate scores.")
             return pd.Series(weights)
 
+        # Pre-compute log values for stability
+        log_n1 = np.log(n_1)
+        log_n0 = np.log(n_0)
+        log_n_total = np.log(n_1 + n_0)
+
         for feature in feature_cols:
             # Calculate proportions of '1's in each group
             p_1 = group_1[feature].mean()
             p_0 = group_0[feature].mean()
 
-            # Calculate pooled proportion
-            p_pooled = ((p_1 * n_1) + (p_0 * n_0)) / (n_1 + n_0)
-            p_pooled = np.clip(p_pooled, 1e-10, 1.0 - 1e-10)  # Avoid exact 0 or 1
+            # Handle edge cases for proportions
+            p_1 = np.clip(p_1, 1e-10, 1.0 - 1e-10)
+            p_0 = np.clip(p_0, 1e-10, 1.0 - 1e-10)
 
-            # Calculate standard error with error handling
-            try:
-                se_diff = np.sqrt(p_pooled * (1 - p_pooled) * (1/n_1 + 1/n_0))
-                se_diff = np.nan_to_num(se_diff, nan=0.0, posinf=0.0, neginf=0.0)
-            except:
-                se_diff = 0.0
+            # Calculate pooled proportion in log space
+            log_p1 = np.log(p_1)
+            log_p0 = np.log(p_0)
+            log_1_minus_p1 = np.log(1 - p_1)
+            log_1_minus_p0 = np.log(1 - p_0)
 
-            # Handle case where standard error is zero to avoid division by zero
-            if se_diff == 0:
+            # Compute pooled proportion using log-sum-exp trick
+            log_pooled_num = np.logaddexp(log_p1 + log_n1, log_p0 + log_n0)
+            log_pooled = log_pooled_num - log_n_total
+            p_pooled = np.exp(log_pooled)
+
+            # Clamp pooled proportion
+            p_pooled = np.clip(p_pooled, 1e-10, 1.0 - 1e-10)
+
+            # Calculate standard error using log-space for stability
+            log_p_pooled = np.log(p_pooled)
+            log_1_minus_p_pooled = np.log(1 - p_pooled)
+            
+            # Compute log of standard error components
+            log_se_comp1 = log_p_pooled + log_1_minus_p_pooled
+            log_se_comp2 = np.log(1/n_1 + 1/n_0)
+            
+            # Combine in log space
+            log_se_squared = log_se_comp1 + log_se_comp2
+            se_diff = np.exp(0.5 * log_se_squared)
+
+            # Handle numerical issues
+            if np.isnan(se_diff) or np.isinf(se_diff) or se_diff < 1e-10:
                 score = 0.0
             else:
-                # Calculate Z-score and take its absolute value for the final score
+                # Calculate Z-score
                 z_score = (p_1 - p_0) / se_diff
                 score = np.abs(z_score)
+                
+                # Handle extreme z-scores
+                if np.isnan(score) or np.isinf(score):
+                    score = 0.0
 
             weights[feature] = score
 
         # Create a DataFrame from the results and sort it
         weights_df = pd.Series(weights)
+        
         if self.normalize_weights:
-            # Normalize so all values are between 0 and 1 and sum to 1
+            # Normalize in log space for stability
             if weights_df.max() > 0:
-                weights_df = (weights_df - weights_df.min()) / (weights_df.max() - weights_df.min())
+                log_weights = np.log(weights_df + 1e-10)  # Add small constant
+                log_min = log_weights.min()
+                log_max = log_weights.max()
+                
+                if log_max > log_min:
+                    # Normalize to [0, 1] range
+                    normalized_weights = (log_weights - log_min) / (log_max - log_min)
+                    weights_df = np.exp(normalized_weights)
+                else:
+                    weights_df = weights_df * 0  # All equal, set to 0
+            
+            # Normalize to sum to 1
             weights_sum = weights_df.sum()
             if weights_sum > 0:
                 weights_df = weights_df / weights_sum
 
         weights_df = weights_df.sort_values(ascending=False)
-
-        print(f'Weights DF: {weights_df}')
+        print(f'Weights: ')
+        print(weights_df)
         self._save_artifacts(weights=weights_df)
 
         return weights_df
@@ -611,11 +642,11 @@ class ScottStrategy:
         
         # Ensure columns are in the same order for dot product
         df_copy = df[['companyid', 'signal_date', target_col]].copy()
-        df_copy['score'] = df[signal_cols].dot(weights).round(4)
+        df_copy['score'] = df[signal_cols].dot(weights)
 
-        print(f'DF Copy: ')
-        print(df_copy.info())
-        
+        print(f'Scores Head: ')
+        print(df_copy.head())
+
         self._save_artifacts(scores=df_copy)
 
         logging.info("Finished calculating scores.")
