@@ -51,9 +51,13 @@ def main():
     config['run_mode'] = args.mode
     config['model_type'] = args.model_type
 
-    if not args.test_run:
+    if args.test_run:
         assert config['price_date_format'] == "%m/%d/%Y", "Price date format must be %m/%d/%Y"
         assert config['date_format'] == "%m/%d/%Y", "Date format must be %m/%d/%Y"
+        assert config['index_date_format'] == "%Y-%m-%d", "Index date format must be %Y-%m-%d"
+    else:
+        assert config['price_date_format'] == "%Y-%m-%d", "Price date format must be %Y-%m-%d"
+        assert config['date_format'] == "%Y-%m-%d", "Date format must be %Y-%m-%d"
         assert config['index_date_format'] == "%Y-%m-%d", "Index date format must be %Y-%m-%d"
 
     if args.model_type in modelv1.MODEL_MAPPING:
