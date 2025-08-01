@@ -557,9 +557,14 @@ class ScottStrategy:
 
             # Calculate pooled proportion
             p_pooled = ((p_1 * n_1) + (p_0 * n_0)) / (n_1 + n_0)
+            p_pooled = np.clip(p_pooled, 1e-10, 1.0 - 1e-10)  # Avoid exact 0 or 1
 
-            # Calculate standard error of the difference
-            se_diff = np.sqrt(p_pooled * (1 - p_pooled) * (1/n_1 + 1/n_0))
+            # Calculate standard error with error handling
+            try:
+                se_diff = np.sqrt(p_pooled * (1 - p_pooled) * (1/n_1 + 1/n_0))
+                se_diff = np.nan_to_num(se_diff, nan=0.0, posinf=0.0, neginf=0.0)
+            except:
+                se_diff = 0.0
 
             # Handle case where standard error is zero to avoid division by zero
             if se_diff == 0:
