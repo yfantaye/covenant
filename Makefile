@@ -7,7 +7,18 @@ UV := uv
 DATA_DIR := ./data
 TEST_DATA_DIR := ./tests/test_data
 MODEL_OUTPUT_DIR := ./model_outputs
-CONFIG_FILE := config_local.yaml
+
+# Dynamic config file based on OS
+ifeq ($(OS),Windows_NT)
+    CONFIG_FILE := config_vm.yaml
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        CONFIG_FILE := config_local.yaml
+    else
+        CONFIG_FILE := config_vm.yaml
+    endif
+endif
 
 .PHONY: all setup clean test-run run-prod tune install run check-encoding setup-backend
 
@@ -81,6 +92,7 @@ clean:
 # Example: make test-run MODEL=z_score
 test-run:
 	@echo ">>> Running a test pipeline on sample data..."
+	@echo ">>> Using config file: $(CONFIG_FILE)"
 	@if [ -z "$(MODEL)" ]; then \
 		echo "Usage: make test-run MODEL=<model_type>"; \
 		echo "Available models: lightgbm, logistic_regression, coxph, z_score, scottv1, scottv2"; \
@@ -98,6 +110,7 @@ test-run:
 # Example: make run-prod MODEL=lightgbm
 run-prod:
 	@echo ">>> Running production training for model: $(MODEL)..."
+	@echo ">>> Using config file: $(CONFIG_FILE)"
 	@if [ -z "$(MODEL)" ]; then \
 		echo "Usage: make run-prod MODEL=<model_type>"; \
 		echo "Available models: lightgbm, logistic_regression, coxph, z_score, scottv1, scottv2"; \
@@ -114,6 +127,7 @@ run-prod:
 # Example: make tune MODEL=lightgbm
 tune:
 	@echo ">>> Running hyperparameter tuning for model: $(MODEL)..."
+	@echo ">>> Using config file: $(CONFIG_FILE)"
 	@if [ -z "$(MODEL)" ]; then \
 		echo "Usage: make tune MODEL=<model_type>"; \
 		echo "Available models: lightgbm"; \
@@ -127,40 +141,52 @@ tune:
 
 # --- Quick Commands ---
 
-# Quick test with scottv1 model
-test-scottv1:
-	@echo ">>> Testing scottv1 model..."
-	$(MAKE) test-run MODEL=scottv1
+# Dynamic run mode based on OS
+ifeq ($(OS),Windows_NT)
+    RUN_MODE := run-prod
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        RUN_MODE := test-run
+    else
+        RUN_MODE := run-prod
+    endif
+endif
 
-# Quick test with scottv2 model
-test-scottv2:
-	@echo ">>> Testing scottv2 model..."
-	$(MAKE) test-run MODEL=scottv2
+# Quick run with scottv1 model
+scottv1:
+	@echo ">>> Running scottv1 model ($(RUN_MODE))..."
+	$(MAKE) $(RUN_MODE) MODEL=scottv1
 
-# Quick test with scottv3 model
-test-scottv3:
-	@echo ">>> Testing scottv3 model..."
-	$(MAKE) test-run MODEL=scottv3
+# Quick run with scottv2 model
+scottv2:
+	@echo ">>> Running scottv2 model ($(RUN_MODE))..."
+	$(MAKE) $(RUN_MODE) MODEL=scottv2
 
-# Quick test with z_score model
-test-zscore:
-	@echo ">>> Testing z_score model..."
-	$(MAKE) test-run MODEL=z_score
+# Quick run with scottv3 model
+scottv3:
+	@echo ">>> Running scottv3 model ($(RUN_MODE))..."
+	$(MAKE) $(RUN_MODE) MODEL=scottv3
 
-# Quick test with lightgbm model
-test-lightgbm:
-	@echo ">>> Testing lightgbm model..."
-	$(MAKE) test-run MODEL=lightgbm
+# Quick run with z_score model
+zscore:
+	@echo ">>> Running z_score model ($(RUN_MODE))..."
+	$(MAKE) $(RUN_MODE) MODEL=z_score
 
-# Quick test with logistic regression model
-test-logistic:
-	@echo ">>> Testing logistic regression model..."
-	$(MAKE) test-run MODEL=logistic_regression
+# Quick run with lightgbm model
+lightgbm:
+	@echo ">>> Running lightgbm model ($(RUN_MODE))..."
+	$(MAKE) $(RUN_MODE) MODEL=lightgbm
 
-# Quick test with coxph model
-test-coxph:
-	@echo ">>> Testing coxph model..."
-	$(MAKE) test-run MODEL=coxph
+# Quick run with logistic regression model
+logistic:
+	@echo ">>> Running logistic regression model ($(RUN_MODE))..."
+	$(MAKE) $(RUN_MODE) MODEL=logistic_regression
+
+# Quick run with coxph model
+coxph:
+	@echo ">>> Running coxph model ($(RUN_MODE))..."
+	$(MAKE) $(RUN_MODE) MODEL=coxph
 
 # --- Jupyter Development ---
 
@@ -201,6 +227,15 @@ models:
 	@echo "  - scottv1: Scott version 1 model"
 	@echo "  - scottv2: Scott version 2 model"
 
+# Show current configuration
+config:
+	@echo ">>> Current configuration:"
+	@echo "  OS: $(shell uname -s)"
+	@echo "  Config file: $(CONFIG_FILE)"
+	@echo "  Run mode: $(RUN_MODE)"
+	@echo "  Python: $(PYTHON)"
+	@echo "  Virtual environment: $(VENV_NAME)"
+
 # Show help
 help:
 	@echo ">>> Available commands:"
@@ -212,13 +247,15 @@ help:
 	@echo "  test-run MODEL=<type>: Run a test with specified model"
 	@echo "  run-prod MODEL=<type>: Run production training"
 	@echo "  tune MODEL=<type>: Run hyperparameter tuning"
-	@echo "  test-scottv1: Quick test with scottv1 model"
-	@echo "  test-scottv2: Quick test with scottv2 model"
-	@echo "  test-zscore: Quick test with z_score model"
-	@echo "  test-lightgbm: Quick test with lightgbm model"
-	@echo "  test-logistic: Quick test with logistic regression model"
-	@echo "  test-coxph: Quick test with coxph model"
+	@echo "  scottv1: Quick run with scottv1 model (test on macOS, prod on Linux)"
+	@echo "  scottv2: Quick run with scottv2 model (test on macOS, prod on Linux)"
+	@echo "  scottv3: Quick run with scottv3 model (test on macOS, prod on Linux)"
+	@echo "  zscore: Quick run with z_score model (test on macOS, prod on Linux)"
+	@echo "  lightgbm: Quick run with lightgbm model (test on macOS, prod on Linux)"
+	@echo "  logistic: Quick run with logistic regression model (test on macOS, prod on Linux)"
+	@echo "  coxph: Quick run with coxph model (test on macOS, prod on Linux)"
 	@echo "  models: Show available models"
+	@echo "  config: Show current configuration"
 	@echo "  clean: Clean up the project"
 	@echo "  check-encoding: Check file encodings"
 	@echo ""
