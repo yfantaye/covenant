@@ -8,7 +8,8 @@ logging.basicConfig(
 
 MODEL_MAPPING = {
     "scottv1": ScottStrategy,
-    "scottv2": ScottStrategy
+    "scottv2": ScottStrategy,
+    "scottv3": ScottStrategy
 }
 
 def run(config):
@@ -20,7 +21,7 @@ def run(config):
 
     df_merged = sm.load_and_merge_data()
 
-    if config['model_type'] in ['scottv1']:
+    if config['model_type'] in ['scottv1', 'scottv2']:
         failure_dates = sm.get_max_beta_dates(df_merged)
     else:
         failure_dates, distress_timeline = sm.compute_probable_failure_dates(df_merged)

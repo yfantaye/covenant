@@ -1,0 +1,29 @@
+# Covenant v2 Project Configuration
+
+## Python Environment
+- Use Python interpreter: .venv/bin/python
+- Virtual environment is located at: .venv/
+- Jupyter kernel: covenantv2
+
+## Project Structure
+- Main configuration: config_local.yaml
+- Model outputs: model_outputs/
+- Notebooks: notebooks/
+- Data: ../covenant/SampleCovenantData/
+
+## Key Files
+- main.py: Main entry point
+- modelv1/updated_failure.py: Scott model implementation
+- modelv2/: New model implementations
+- requirements.txt: Python dependencies
+
+## Development Workflow
+- Use 'make jupyter' to start Jupyter with correct environment
+- Use 'make test-run MODEL=<type>' for testing models
+- Use 'make run-prod MODEL=<type>' for production runs
+- Always select 'Covenant v2 Environment' kernel in Jupyter notebooks
+
+## Environment Setup
+- Virtual environment: .venv/
+- Python version: 3.13
+- Key packages: pandas, numpy, scikit-learn, lightgbm, optuna, yfinance 

@@ -1,0 +1,9 @@
+{
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "jupyter.interpreter": ".venv/bin/python",
+    "jupyter.kernelspecs": {
+        "covenantv2": "/Users/yabebal/Library/Jupyter/kernels/covenantv2"
+    }
+} 

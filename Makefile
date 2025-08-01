@@ -137,6 +137,11 @@ test-scottv2:
 	@echo ">>> Testing scottv2 model..."
 	$(MAKE) test-run MODEL=scottv2
 
+# Quick test with scottv3 model
+test-scottv3:
+	@echo ">>> Testing scottv3 model..."
+	$(MAKE) test-run MODEL=scottv3
+
 # Quick test with z_score model
 test-zscore:
 	@echo ">>> Testing z_score model..."
@@ -156,6 +161,33 @@ test-logistic:
 test-coxph:
 	@echo ">>> Testing coxph model..."
 	$(MAKE) test-run MODEL=coxph
+
+# --- Jupyter Development ---
+
+# Start Jupyter Notebook
+jupyter:
+	@echo ">>> Starting Jupyter Notebook..."
+	@echo ">>> Make sure to select 'Covenant v2 Environment' kernel in your notebooks"
+	. $(VENV_NAME)/bin/activate && jupyter notebook --notebook-dir=.
+
+# Start Jupyter Lab
+jupyter-lab:
+	@echo ">>> Starting Jupyter Lab..."
+	@echo ">>> Make sure to select 'Covenant v2 Environment' kernel in your notebooks"
+	. $(VENV_NAME)/bin/activate && jupyter lab --notebook-dir=.
+
+# Install Jupyter kernel for this environment
+install-kernel:
+	@echo ">>> Installing Jupyter kernel for covenantv2 environment..."
+	. $(VENV_NAME)/bin/activate && python -m ipykernel install --user --name=covenantv2 --display-name="Covenant v2 Environment"
+	@echo ">>> Kernel installed successfully!"
+	@echo ">>> Available kernels:"
+	. $(VENV_NAME)/bin/activate && jupyter kernelspec list
+
+# List available Jupyter kernels
+list-kernels:
+	@echo ">>> Available Jupyter kernels:"
+	. $(VENV_NAME)/bin/activate && jupyter kernelspec list
 
 # --- Development Helpers ---
 
@@ -189,6 +221,12 @@ help:
 	@echo "  models: Show available models"
 	@echo "  clean: Clean up the project"
 	@echo "  check-encoding: Check file encodings"
+	@echo ""
+	@echo ">>> Jupyter Development:"
+	@echo "  jupyter: Start Jupyter Notebook"
+	@echo "  jupyter-lab: Start Jupyter Lab"
+	@echo "  install-kernel: Install Jupyter kernel for this environment"
+	@echo "  list-kernels: List available Jupyter kernels"
 	@echo ""
 	@echo ">>> Python 3.13 Compatibility Notes:"
 	@echo "  - Use 'setup-minimal' if the main setup fails"

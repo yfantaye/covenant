@@ -452,6 +452,16 @@ class ScottStrategy:
         non_failed_std[non_failed_std == 0] = 1e-6
         
         weights = (failed_props - non_failed_props) / non_failed_std
+
+        if self.normalize_weights:
+            # Normalize so all values are between 0 and 1 and sum to 1
+            if weights.max() > 0:
+                weights = (weights - weights.min()) / (weights.max() - weights.min())
+            weights_sum = weights.sum()
+            if weights_sum > 0:
+                weights = weights / weights_sum
+
+
         logging.info("Successfully computed weights for all signals.")
 
         self._save_artifacts(weights=weights)   
@@ -571,6 +581,7 @@ class ScottStrategy:
             weights_sum = weights_df.sum()
             if weights_sum > 0:
                 weights_df = weights_df / weights_sum
+
         weights_df = weights_df.sort_values(ascending=False)
 
         print(f'Weights DF: {weights_df}')
