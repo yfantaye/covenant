@@ -313,7 +313,7 @@ class ScottStrategy:
         Adds the 'fail' label to the binary signals data based on the failure_dates.
         
         Args:
-            data_dir: The directory containing the binarySignalsPart files.
+            data_dir: The directory containing the binarySignals files.
             failure_dates: Dictionary from get_failure_dates.
             fail_days: The number of days after max_beta_date to label as failure.
 
@@ -321,9 +321,9 @@ class ScottStrategy:
             A DataFrame of binary signals with an added 'fail' column.
         """
         logging.info(f"Adding failure labels for a {self.fail_days}-day window...")
-        signal_files = self._find_files('binarySignalsPart')
+        signal_files = self._find_files('binarySignals')
         if not signal_files:
-            raise FileNotFoundError(f"No binarySignalsPart files found in {self.data_dir}")
+            raise FileNotFoundError(f"No binarySignals files found in {self.data_dir}")
 
         df_signals = pd.concat(
             [pd.read_csv(f, 
