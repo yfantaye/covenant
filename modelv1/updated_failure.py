@@ -240,7 +240,7 @@ class ScottStrategy:
         logging.info("Starting data loading and merging process...")
 
         # Load Share Prices
-        share_price_files = self._find_files('sharePricePart')
+        share_price_files = self._find_files('sharePrice')
         df_price = pd.concat(
             [pd.read_csv(f, 
                         parse_dates=['pricing_date'], 
@@ -250,7 +250,7 @@ class ScottStrategy:
         logging.info(f"Loaded {len(df_price)} rows from {len(share_price_files)} share price files.")
 
         # Load Index Values
-        index_files = self._find_files('indexValuesPart')
+        index_files = self._find_files('indexValues')
         df_index = pd.concat(
             [pd.read_csv(f, 
                         parse_dates=['pricing_date'], 
@@ -263,7 +263,7 @@ class ScottStrategy:
 
 
         # Load Reference Data to link company to index
-        ref_file = self._find_files('referenceDataPart')[0]
+        ref_file = self._find_files('referenceData')[0]
         df_ref = pd.read_csv(ref_file)        
 
         logging.info(f"Loaded reference data from {ref_file}.")
